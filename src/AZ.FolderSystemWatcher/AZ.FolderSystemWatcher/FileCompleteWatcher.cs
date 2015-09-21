@@ -9,8 +9,10 @@ namespace AZ.IO.FileSystem
         private WatcherItem _fileItem;
 
         public event EventHandler<FileCompleteEventArgs> FileCompleted;
-        public  Guid FwId { get; private set; }
+        public Guid FwId { get; private set; }
         private System.Threading.Timer _timer;
+
+        private bool IsFileComplete = false;
 
         public FileCompleteWatcher(WatcherItem fileItem)
         {
@@ -21,12 +23,21 @@ namespace AZ.IO.FileSystem
 
         private void onInterval(object state)
         {
-            if (FileUnlocked())
+            if (!IsFileComplete)
             {
-                _timer.Change(1000, 0);
-                _timer.Dispose();
-                OnFileCompleted(new FileCompleteEventArgs() { FwId = FwId, FileItem = _fileItem });
-               
+                if (FileUnlocked())
+                {
+                    try
+                    {
+                        _timer.Change(1000, 0);
+                        _timer.Dispose();
+                        OnFileCompleted(new FileCompleteEventArgs() { FwId = FwId, FileItem = _fileItem });
+                    }
+                    catch
+                    {
+                    }
+
+                }
             }
         }
 
@@ -40,10 +51,11 @@ namespace AZ.IO.FileSystem
 
             try
             {
-                var fi=new FileInfo(_fileItem.FullPath);
-                var fs= fi.OpenRead();
+                var fi = new FileInfo(_fileItem.FullPath);
+                var fs = fi.OpenRead();
                 fs.Close();
-               // var fs = File.Open(_filePath, FileMode.Open);
+                // var fs = File.Open(_filePath, FileMode.Open);
+                IsFileComplete = true;
                 return true;
             }
             catch
@@ -65,5 +77,6 @@ namespace AZ.IO.FileSystem
         public Guid FwId { get; set; }
 
         public WatcherItem FileItem { get; set; }
+
     }
 }

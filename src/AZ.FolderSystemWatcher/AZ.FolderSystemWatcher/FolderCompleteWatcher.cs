@@ -14,6 +14,8 @@ namespace AZ.IO.FileSystem
 
         private System.Threading.Timer _timer;
 
+        private int _timerInterval = 3000;// default milseconds to execute onInterval function
+
         private long oldSize;
 
         public FolderCompleteWatcher(WatcherItem folderItem)
@@ -21,6 +23,17 @@ namespace AZ.IO.FileSystem
             _folderItem = folderItem;
             FwId = Guid.NewGuid();
 
+        }
+
+        public FolderCompleteWatcher(WatcherItem folderItem,int interval)
+        {
+            _folderItem = folderItem;
+            FwId = Guid.NewGuid();
+
+            if (interval > 0)
+            {
+                _timerInterval = interval;
+            }
         }
 
         private void onInterval(object state)
@@ -36,8 +49,13 @@ namespace AZ.IO.FileSystem
 
             if (size == oldSize)
             {
-                _timer.Change(1000, 0);
-                _timer.Dispose();
+                try
+                {
+                    _timer.Change(1000, 0);
+                    _timer.Dispose();
+                }
+                catch { }
+
                 OnFolderCompleted(new FileCompleteEventArgs() { FwId = FwId, FileItem = _folderItem });
             }
             else
@@ -54,7 +72,7 @@ namespace AZ.IO.FileSystem
 
         public void Start()
         {
-            _timer = new Timer(onInterval, null, 1000, 3000);//3秒钟检测一次
+            _timer = new Timer(onInterval, null, 1000, _timerInterval);//3秒钟检测一次
         }
 
         protected virtual void OnFolderCompleted(FileCompleteEventArgs e)

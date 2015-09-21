@@ -5,10 +5,11 @@ using System.Text;
 
 namespace AZ.IO.FileSystem
 {
-    internal enum WatcherType
+    public enum WatcherType
     {
         FileCreate,
         FileReplace,
+      //  FileCopy,
         FolderCreate,
         FolderCopy,
         FolderReplace

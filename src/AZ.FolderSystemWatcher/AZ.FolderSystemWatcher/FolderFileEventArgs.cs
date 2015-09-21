@@ -8,5 +8,7 @@ namespace AZ.IO.FileSystem
     public class FolderFileEventArgs:EventArgs
     {
         public string FullPath { get; set; }
+
+        public WatcherType WatchType { get; set; }
     }
 }
