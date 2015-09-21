@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demo", "Demo", "{7B19F5B9-B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Watcher.Test", "Watcher.Test\Watcher.Test.csproj", "{EA23ECD5-4298-4502-B648-48B190C663A2}"
 EndProject
+Project("{E09DD79A-4488-4AB9-8D3F-A7EEE78BF432}") = "AZ.FolderSystemWatcher.Packager", "AZ.FolderSystemWatcher.Packager\AZ.FolderSystemWatcher.Packager.nuproj", "{909AD483-6BAB-48A6-8071-B3F8733C4CFB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,6 +25,10 @@ Global
 		{EA23ECD5-4298-4502-B648-48B190C663A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA23ECD5-4298-4502-B648-48B190C663A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA23ECD5-4298-4502-B648-48B190C663A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{909AD483-6BAB-48A6-8071-B3F8733C4CFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{909AD483-6BAB-48A6-8071-B3F8733C4CFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{909AD483-6BAB-48A6-8071-B3F8733C4CFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{909AD483-6BAB-48A6-8071-B3F8733C4CFB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
