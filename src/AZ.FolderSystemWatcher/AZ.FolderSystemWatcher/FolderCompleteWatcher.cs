@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace AZ.IO.FileSystem
 {
-    public class FolderCompleteWatcher
+    internal class FolderCompleteWatcher
     {
         private WatcherItem _folderItem;
 

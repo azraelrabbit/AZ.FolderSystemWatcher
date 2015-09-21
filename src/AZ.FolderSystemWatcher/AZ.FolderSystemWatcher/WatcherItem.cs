@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AZ.IO.FileSystem
 {
-    public class WatcherItem
+    internal class WatcherItem
     {
         public WatcherType WatcherType { get; set; }
 

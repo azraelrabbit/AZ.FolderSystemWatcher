@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace AZ.IO.FileSystem
 {
-    public class FileCompleteWatcher
+    internal class FileCompleteWatcher
     {
         private WatcherItem _fileItem;
 
@@ -60,7 +60,7 @@ namespace AZ.IO.FileSystem
         }
     }
 
-    public class FileCompleteEventArgs : EventArgs
+    internal class FileCompleteEventArgs : EventArgs
     {
         public Guid FwId { get; set; }
 

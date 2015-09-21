@@ -10,7 +10,7 @@ namespace AZ.IO.FileSystem
         private string _watchingFolder;
 
         private FileSystemWatcher folderWatcher;
-
+         
         private List<FileCompleteWatcher> fileWatcher;
 
         private List<string> files=new List<string>(); 
@@ -28,7 +28,7 @@ namespace AZ.IO.FileSystem
 
         public event EventHandler<FolderFileEventArgs> FileCreated;
 
-        public event EventHandler<FolderFileEventArgs> FileReplaced;
+        //public event EventHandler<FolderFileEventArgs> FileReplaced;
  
 
         public FolderFileWatcher(string watchRootPath)
@@ -70,7 +70,7 @@ namespace AZ.IO.FileSystem
             if (IsDir(path) && !IsInSubFolder(path))
             {
                 // if folder copy 
-                Console.WriteLine("copying folder :" + path);
+               // Console.WriteLine("copying folder :" + path);
 
                 subFolders.Add(path);
 
@@ -88,7 +88,7 @@ namespace AZ.IO.FileSystem
             {// if is file,and in existing subdir,then current is subfolder replacing
                 var subDirItem = GetSubFolderItem(path);
 
-                Console.WriteLine("replacing folder :" + subDirItem);
+              //  Console.WriteLine("replacing folder :" + subDirItem);
 
                 subFolders.Add(subDirItem);
 
@@ -107,7 +107,7 @@ namespace AZ.IO.FileSystem
                 {
                     files.Add(path);
 
-                    Console.WriteLine("changed file :" + path);
+                  //  Console.WriteLine("changed file :" + path);
                     var fw = new FileCompleteWatcher(new WatcherItem() {FullPath = path,WatcherType = fileWatchFype });
                     fw.FileCompleted += Fw_FileCompleted;
                     fw.Start();
@@ -168,7 +168,7 @@ namespace AZ.IO.FileSystem
 
         private void Subfw_FolderCompleted(object sender, FileCompleteEventArgs e)
         {
-            Console.WriteLine("folder {0} completed: {1}.", e.FileItem.WatcherType,e.FileItem.FullPath);
+          //  Console.WriteLine("folder {0} completed: {1}.", e.FileItem.WatcherType,e.FileItem.FullPath);
 
             try
             {
@@ -200,7 +200,7 @@ namespace AZ.IO.FileSystem
             }
         }
 
-        public bool IsInSubFolder(string filePath)
+          bool IsInSubFolder(string filePath)
         {
             var folder = subFolders.FirstOrDefault(p => filePath.Contains(p));
             if (string.IsNullOrEmpty(folder))
@@ -210,7 +210,7 @@ namespace AZ.IO.FileSystem
             return true;
         }
 
-        public bool IsDir(string path)
+         bool IsDir(string path)
         {
             var fa = File.GetAttributes(path);
             if ((fa & FileAttributes.Directory) != 0)
@@ -222,7 +222,7 @@ namespace AZ.IO.FileSystem
 
         private void Fw_FileCompleted(object sender, FileCompleteEventArgs e)
         {
-            Console.WriteLine("file {0} completed: {1}.", e.FileItem.WatcherType, e.FileItem.FullPath);
+         //   Console.WriteLine("file {0} completed: {1}.", e.FileItem.WatcherType, e.FileItem.FullPath);
            // Console.WriteLine("file completed: {0}.",e.FileItem.FullPath);
 
             try

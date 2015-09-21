@@ -12,7 +12,13 @@ namespace Watcher.Test
         static void Main(string[] args)
         {
             var targetFolder = @"E:\watchertest";
+
             var folderWatcher = new FolderFileWatcher(targetFolder);
+
+            folderWatcher.FileCreated += FolderWatcher_FileCreated;
+            folderWatcher.FolderCopied += FolderWatcher_FolderCopied;
+            folderWatcher.FolderReplaced += FolderWatcher_FolderReplaced;
+
 
             folderWatcher.StartWatch();
 
@@ -20,5 +26,22 @@ namespace Watcher.Test
 
             folderWatcher.StopWatch();
         }
+
+        private static void FolderWatcher_FolderReplaced(object sender, FolderFileEventArgs e)
+        {
+            Console.WriteLine("Folder Replaced : {0}", e.FullPath);
+        }
+
+        private static void FolderWatcher_FolderCopied(object sender, FolderFileEventArgs e)
+        {
+            Console.WriteLine("Folder Copied : {0}",e.FullPath);
+        }
+
+        private static void FolderWatcher_FileCreated(object sender, FolderFileEventArgs e)
+        {
+            Console.WriteLine("File Created : {0}",e.FullPath);
+        }
+
+
     }
 }

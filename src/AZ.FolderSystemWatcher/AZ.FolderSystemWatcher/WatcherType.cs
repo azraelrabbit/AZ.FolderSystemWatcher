@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AZ.IO.FileSystem
 {
-    public enum WatcherType
+    internal enum WatcherType
     {
         FileCreate,
         FileReplace,
