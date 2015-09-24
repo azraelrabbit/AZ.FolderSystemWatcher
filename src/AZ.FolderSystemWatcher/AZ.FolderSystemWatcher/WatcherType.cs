@@ -12,6 +12,7 @@ namespace AZ.IO.FileSystem
       //  FileCopy,
         FolderCreate,
         FolderCopy,
-        FolderReplace
+        FolderReplace,
+        Delete
     }
 }

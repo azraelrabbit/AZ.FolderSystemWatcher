@@ -10,11 +10,12 @@ namespace AZ.IO.FileSystem
         private WatcherItem _folderItem;
 
         public event EventHandler<FileCompleteEventArgs> FolderCompleted;
+         
         public Guid FwId { get; private set; }
 
         private System.Threading.Timer _timer;
 
-        private int _timerInterval = 3000;// default milseconds to execute onInterval function
+        private int _timerInterval = 3000;// default Millisecond to execute onInterval function
 
         private long oldSize;
 
@@ -38,14 +39,7 @@ namespace AZ.IO.FileSystem
 
         private void onInterval(object state)
         {
-            //if (FileUnlocked())
-            //{
-            //    OnFileCompleted(new FileCompleteEventArgs() { FwId = FwId, FilePath = _filePath });
-            //    _timer.Dispose();
-            //}
-
             var size = GetDirectorySize(_folderItem.FullPath);
-            //  Console.WriteLine("old size:{0}, new size: {1}", oldSize, size);
 
             if (size == oldSize)
             {
@@ -56,6 +50,7 @@ namespace AZ.IO.FileSystem
                 }
                 catch { }
 
+                //Synchronize event
                 OnFolderCompleted(new FileCompleteEventArgs() { FwId = FwId, FileItem = _folderItem });
             }
             else
@@ -72,12 +67,13 @@ namespace AZ.IO.FileSystem
 
         public void Start()
         {
-            _timer = new Timer(onInterval, null, 1000, _timerInterval);//3秒钟检测一次
+            _timer = new Timer(onInterval, null, 1000, _timerInterval);
         }
 
         protected virtual void OnFolderCompleted(FileCompleteEventArgs e)
         {
             FolderCompleted?.Invoke(this, e);
         }
+ 
     }
 }

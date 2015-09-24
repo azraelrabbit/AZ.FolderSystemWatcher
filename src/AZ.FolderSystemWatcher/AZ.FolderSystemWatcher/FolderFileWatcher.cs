@@ -18,8 +18,11 @@ namespace AZ.IO.FileSystem
         private List<FolderCompleteWatcher> subfolderWatcher;
         List<string> subFolders = new List<string>();
 
-
+        //Synchronize event
         public event EventHandler<FolderFileEventArgs> WatchItemCompleted;
+
+        //Asynchronous event ,the event subscriber run on separate thread.
+        public event EventHandler<FolderFileEventArgs> WatchItemCompletedAsync;
 
         public FolderFileWatcher(string watchRootPath)
         {
@@ -32,15 +35,22 @@ namespace AZ.IO.FileSystem
         {
             folderWatcher = new FileSystemWatcher();
             folderWatcher.Path = _watchingFolder;
-            folderWatcher.Filter = "*";
+            folderWatcher.Filter = "*";//change from *.* to * to Compatible mono run on linux.
 
             folderWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
             folderWatcher.Created += FolderWatcher_Created;
             folderWatcher.Changed += FolderWatcher_Changed;
+            folderWatcher.Deleted += FolderWatcher_Deleted;
             folderWatcher.IncludeSubdirectories = true;
             folderWatcher.EnableRaisingEvents = true;
 
             Console.WriteLine("start watching : {0}", _watchingFolder);
+        }
+
+        private void FolderWatcher_Deleted(object sender, FileSystemEventArgs e)
+        {
+            OnWatchItemCompleted(new FolderFileEventArgs() { FullPath = e.FullPath, WatchType = WatcherType.Delete });
+            OnWatchItemCompletedAsync(new FolderFileEventArgs() { FullPath = e.FullPath, WatchType = WatcherType.Delete });
         }
 
         private void FolderWatcher_Created(object sender, FileSystemEventArgs e)
@@ -71,7 +81,6 @@ namespace AZ.IO.FileSystem
             else
             {
                 //single file  creating
-
                 var fileWatchFype = WatcherType.FileCreate;
                 // isReplace ? WatcherType.FileReplace : WatcherType.FileCreate;
                 //Console.WriteLine(fileWatcher);
@@ -199,7 +208,6 @@ namespace AZ.IO.FileSystem
 
         private void Subfw_FolderCompleted(object sender, FileCompleteEventArgs e)
         {
-            //  Console.WriteLine("folder {0} completed: {1}.", e.FileItem.WatcherType,e.FileItem.FullPath);
 
             try
             {
@@ -221,6 +229,7 @@ namespace AZ.IO.FileSystem
             catch { }
 
             OnWatchItemCompleted(new FolderFileEventArgs() { FullPath = e.FileItem.FullPath, WatchType = e.FileItem.WatcherType });
+            OnWatchItemCompletedAsync(new FolderFileEventArgs() { FullPath = e.FileItem.FullPath, WatchType = e.FileItem.WatcherType });
         }
 
         bool IsInSubFolder(string filePath)
@@ -245,9 +254,6 @@ namespace AZ.IO.FileSystem
 
         private void Fw_FileCompleted(object sender, FileCompleteEventArgs e)
         {
-            //   Console.WriteLine("file {0} completed: {1}.", e.FileItem.WatcherType, e.FileItem.FullPath);
-            // Console.WriteLine("file completed: {0}.",e.FileItem.FullPath);
-
             try
             {
                 if (fileWatcher.Exists(p => p.FwId == e.FwId))
@@ -269,13 +275,18 @@ namespace AZ.IO.FileSystem
 
             OnWatchItemCompleted(new FolderFileEventArgs() { FullPath = e.FileItem.FullPath, WatchType = e.FileItem.WatcherType });
 
+            OnWatchItemCompletedAsync(new FolderFileEventArgs() { FullPath = e.FileItem.FullPath, WatchType = e.FileItem.WatcherType });
         }
 
         public void StopWatch()
         {
+            files = new List<string>();
+            subfolderWatcher = new List<FolderCompleteWatcher>();
+            subFolders = new List<string>();
+
             folderWatcher.Changed -= FolderWatcher_Changed;
             folderWatcher.Created -= FolderWatcher_Created;
-
+            folderWatcher.Deleted -= FolderWatcher_Deleted;
             folderWatcher.Dispose();
 
             Console.WriteLine("stop watch {0}", _watchingFolder);
@@ -284,6 +295,15 @@ namespace AZ.IO.FileSystem
         protected virtual void OnWatchItemCompleted(FolderFileEventArgs e)
         {
             WatchItemCompleted?.Invoke(this, e);
+        }
+
+        protected virtual void OnWatchItemCompletedAsync(FolderFileEventArgs e)
+        {
+            var eventList = WatchItemCompletedAsync.GetInvocationList();
+            foreach (EventHandler<FolderFileEventArgs> eventHandler in eventList)
+            {
+                eventHandler.BeginInvoke(null, e, null, null);
+            }
         }
     }
 }
