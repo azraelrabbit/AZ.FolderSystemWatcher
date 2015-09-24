@@ -37,7 +37,7 @@ namespace AZ.IO.FileSystem
             folderWatcher.Path = _watchingFolder;
             folderWatcher.Filter = "*";//change from *.* to * to Compatible mono run on linux.
 
-            folderWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+            folderWatcher.NotifyFilter = NotifyFilters.LastWrite| NotifyFilters.FileName | NotifyFilters.DirectoryName|NotifyFilters.LastAccess;// | 
             folderWatcher.Created += FolderWatcher_Created;
             folderWatcher.Changed += FolderWatcher_Changed;
             folderWatcher.Deleted += FolderWatcher_Deleted;
@@ -49,6 +49,7 @@ namespace AZ.IO.FileSystem
 
         private void FolderWatcher_Deleted(object sender, FileSystemEventArgs e)
         {
+            Console.WriteLine("deleteing: {0}",e.FullPath);
             OnWatchItemCompleted(new FolderFileEventArgs() { FullPath = e.FullPath, WatchType = WatcherType.Delete });
             OnWatchItemCompletedAsync(new FolderFileEventArgs() { FullPath = e.FullPath, WatchType = WatcherType.Delete });
         }
@@ -57,9 +58,15 @@ namespace AZ.IO.FileSystem
         {
             //  Console.WriteLine("Creating: "+e.Name);
 
+            if (e.ChangeType == WatcherChangeTypes.Deleted)
+            {
+                Console.WriteLine("deleted");
+                return;
+            }
+
             var path = e.FullPath;
             var watchType = WatcherType.FileCreate;
-            if (IsDir(path))
+            if (IsDir(path) && !IsInSubFolder(path))
             {//creating folder
                 watchType = WatcherType.FolderCreate;
                 subFolders.Add(path);
@@ -102,23 +109,24 @@ namespace AZ.IO.FileSystem
 
         private void FolderWatcher_Changed(object sender, FileSystemEventArgs e)
         {
-            // Console.WriteLine("changing:{0}",e.FullPath);
+          //   Console.WriteLine("changing:{0}",e.FullPath);
             var path = e.FullPath;
             // var isReplace = File.Exists(path);
 
 
             if (IsDir(path) && !IsInSubFolder(path))
             {
+                //ignore this issue, do not care.
                 // if folder copy 
                 // Console.WriteLine("copying folder :" + path);
 
-                subFolders.Add(path);
+                //subFolders.Add(path);
 
-                var subfw =
-                    new FolderCompleteWatcher(new WatcherItem() { FullPath = path, WatcherType = WatcherType.FolderCopy });
-                subfw.FolderCompleted += Subfw_FolderCompleted;
-                subfw.Start();
-                subfolderWatcher.Add(subfw);
+                //var subfw =
+                //    new FolderCompleteWatcher(new WatcherItem() { FullPath = path, WatcherType = WatcherType.FolderCopy });
+                //subfw.FolderCompleted += Subfw_FolderCompleted;
+                //subfw.Start();
+                //subfolderWatcher.Add(subfw);
             }
             else if (IsInSubFolder(path))
             {// in copying folder 'file, do not care.
@@ -299,11 +307,15 @@ namespace AZ.IO.FileSystem
 
         protected virtual void OnWatchItemCompletedAsync(FolderFileEventArgs e)
         {
-            var eventList = WatchItemCompletedAsync.GetInvocationList();
-            foreach (EventHandler<FolderFileEventArgs> eventHandler in eventList)
+            if (WatchItemCompletedAsync != null)
             {
-                eventHandler.BeginInvoke(null, e, null, null);
+                var eventList = WatchItemCompletedAsync.GetInvocationList();
+                foreach (EventHandler<FolderFileEventArgs> eventHandler in eventList)
+                {
+                    eventHandler.BeginInvoke(null, e, null, null);
+                }
             }
+           
         }
     }
 }
