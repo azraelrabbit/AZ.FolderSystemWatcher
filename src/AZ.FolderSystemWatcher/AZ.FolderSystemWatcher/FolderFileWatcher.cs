@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,11 +25,14 @@ namespace AZ.IO.FileSystem
         //Asynchronous event ,the event subscriber run on separate thread.
         public event EventHandler<FolderFileEventArgs> WatchItemCompletedAsync;
 
+        private ConcurrentDictionary<string, string> renameCacheList;
+
         public FolderFileWatcher(string watchRootPath)
         {
             _watchingFolder = watchRootPath;
             fileWatcher = new List<FileCompleteWatcher>();
             subfolderWatcher = new List<FolderCompleteWatcher>();
+            renameCacheList=new ConcurrentDictionary<string, string>();
         }
 
         public void StartWatch()
@@ -37,19 +41,38 @@ namespace AZ.IO.FileSystem
             folderWatcher.Path = _watchingFolder;
             folderWatcher.Filter = "*";//change from *.* to * to Compatible mono run on linux.
 
-            folderWatcher.NotifyFilter = NotifyFilters.LastWrite| NotifyFilters.FileName | NotifyFilters.DirectoryName|NotifyFilters.LastAccess;// | 
+            folderWatcher.NotifyFilter = NotifyFilters.LastWrite| NotifyFilters.FileName | NotifyFilters.DirectoryName|NotifyFilters.LastAccess|NotifyFilters.Attributes;// | 
+            folderWatcher.Renamed += FolderWatcher_Renamed;
             folderWatcher.Created += FolderWatcher_Created;
             folderWatcher.Changed += FolderWatcher_Changed;
             folderWatcher.Deleted += FolderWatcher_Deleted;
+
+            
             folderWatcher.IncludeSubdirectories = true;
             folderWatcher.EnableRaisingEvents = true;
 
-            Console.WriteLine("start watching : {0}", _watchingFolder);
+            //Console.WriteLine("start watching : {0}", _watchingFolder);
+        }
+
+        private void FolderWatcher_Renamed(object sender, RenamedEventArgs e)
+        {
+            var oldPath = e.OldFullPath;
+            if (renameCacheList.ContainsKey(oldPath.ToLower()))
+            {
+                //create new file/folder with right click and renaming item ,that only effective on less 5 second for typing name.
+                renameCacheList[oldPath.ToLower()] = e.FullPath;
+            }
+            else
+            {
+                //this only effective in actual rename file/folder
+                OnWatchItemCompleted(new FolderFileEventArgs() { FullPath = e.FullPath, WatchType = WatcherType.FileRename ,OldFullPath = e.OldFullPath});
+                OnWatchItemCompletedAsync(new FolderFileEventArgs() { FullPath = e.FullPath, WatchType = WatcherType.FileRename, OldFullPath = e.OldFullPath });
+            }
         }
 
         private void FolderWatcher_Deleted(object sender, FileSystemEventArgs e)
         {
-            Console.WriteLine("deleteing: {0}",e.FullPath);
+            //Console.WriteLine("deleteing: {0}",e.FullPath);
             OnWatchItemCompleted(new FolderFileEventArgs() { FullPath = e.FullPath, WatchType = WatcherType.Delete });
             OnWatchItemCompletedAsync(new FolderFileEventArgs() { FullPath = e.FullPath, WatchType = WatcherType.Delete });
         }
@@ -60,7 +83,7 @@ namespace AZ.IO.FileSystem
 
             if (e.ChangeType == WatcherChangeTypes.Deleted)
             {
-                Console.WriteLine("deleted");
+                //Console.WriteLine("deleted");
                 return;
             }
 
@@ -68,6 +91,9 @@ namespace AZ.IO.FileSystem
             var watchType = WatcherType.FileCreate;
             if (IsDir(path) && !IsInSubFolder(path))
             {//creating folder
+
+                renameCacheList.TryAdd(path.ToLower(),string.Empty);
+
                 watchType = WatcherType.FolderCreate;
                 subFolders.Add(path);
 
@@ -87,6 +113,7 @@ namespace AZ.IO.FileSystem
             }
             else
             {
+                renameCacheList.TryAdd(path.ToLower(), string.Empty);
                 //single file  creating
                 var fileWatchFype = WatcherType.FileCreate;
                 // isReplace ? WatcherType.FileReplace : WatcherType.FileCreate;
@@ -236,8 +263,20 @@ namespace AZ.IO.FileSystem
             }
             catch { }
 
-            OnWatchItemCompleted(new FolderFileEventArgs() { FullPath = e.FileItem.FullPath, WatchType = e.FileItem.WatcherType });
-            OnWatchItemCompletedAsync(new FolderFileEventArgs() { FullPath = e.FileItem.FullPath, WatchType = e.FileItem.WatcherType });
+            var newPath = e.FileItem.FullPath;
+            if (renameCacheList.ContainsKey(e.FileItem.FullPath.ToLower()))
+            {
+                //creating with rename operation
+                renameCacheList.TryRemove(e.FileItem.FullPath.ToLower(), out newPath);
+
+                if (string.IsNullOrEmpty(newPath))
+                {
+                    newPath = e.FileItem.FullPath;
+                }
+            }
+
+            OnWatchItemCompleted(new FolderFileEventArgs() { FullPath = newPath, WatchType = e.FileItem.WatcherType });
+            OnWatchItemCompletedAsync(new FolderFileEventArgs() { FullPath = newPath, WatchType = e.FileItem.WatcherType });
         }
 
         bool IsInSubFolder(string filePath)
@@ -252,12 +291,19 @@ namespace AZ.IO.FileSystem
 
         bool IsDir(string path)
         {
-            var fa = File.GetAttributes(path);
-            if ((fa & FileAttributes.Directory) != 0)
-            {
+            //var fa = File.GetAttributes(path);
+            //if ((fa & FileAttributes.Directory) != 0)
+            //{
+            //    return true;
+            //}
+            //return false;
+
+            //new methods ,the old methods has some issue.
+            FileAttributes attr = File.GetAttributes(path);
+            if (attr.HasFlag(FileAttributes.Directory))
                 return true;
-            }
-            return false;
+            else
+                return false;
         }
 
         private void Fw_FileCompleted(object sender, FileCompleteEventArgs e)
@@ -281,9 +327,20 @@ namespace AZ.IO.FileSystem
             }
             catch { }
 
-            OnWatchItemCompleted(new FolderFileEventArgs() { FullPath = e.FileItem.FullPath, WatchType = e.FileItem.WatcherType });
+            var newPath = e.FileItem.FullPath;
+            if (renameCacheList.ContainsKey(e.FileItem.FullPath.ToLower()))
+            {
+                //creating with rename operation
+                renameCacheList.TryRemove(e.FileItem.FullPath.ToLower(), out newPath);
+                if (string.IsNullOrEmpty(newPath))
+                {
+                    newPath = e.FileItem.FullPath;
+                }
+            }
 
-            OnWatchItemCompletedAsync(new FolderFileEventArgs() { FullPath = e.FileItem.FullPath, WatchType = e.FileItem.WatcherType });
+            OnWatchItemCompleted(new FolderFileEventArgs() { FullPath = newPath, WatchType = e.FileItem.WatcherType });
+
+            OnWatchItemCompletedAsync(new FolderFileEventArgs() { FullPath = newPath, WatchType = e.FileItem.WatcherType });
         }
 
         public void StopWatch()
@@ -297,7 +354,7 @@ namespace AZ.IO.FileSystem
             folderWatcher.Deleted -= FolderWatcher_Deleted;
             folderWatcher.Dispose();
 
-            Console.WriteLine("stop watch {0}", _watchingFolder);
+            //Console.WriteLine("stop watch {0}", _watchingFolder);
         }
 
         protected virtual void OnWatchItemCompleted(FolderFileEventArgs e)

@@ -9,9 +9,10 @@ namespace AZ.IO.FileSystem
     {
         FileCreate,
         FileReplace,
- 
+        FileRename,
+
         FolderCreate,
-      
+        FolderRename,
         FolderReplace,
         Delete
     }

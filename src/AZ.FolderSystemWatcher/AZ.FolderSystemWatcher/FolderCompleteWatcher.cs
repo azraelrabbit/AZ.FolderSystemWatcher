@@ -15,7 +15,7 @@ namespace AZ.IO.FileSystem
 
         private System.Threading.Timer _timer;
 
-        private int _timerInterval = 3000;// default Millisecond to execute onInterval function
+        private int _timerInterval = 5000;// default Millisecond to execute onInterval function
 
         private long oldSize;
 
@@ -39,7 +39,7 @@ namespace AZ.IO.FileSystem
 
         private void onInterval(object state)
         {
-            var size = GetDirectorySize(_folderItem.FullPath);
+            var size = GetDirectorySize(_folderItem.FullPath,oldSize);
 
             if (size == oldSize)
             {
@@ -59,15 +59,30 @@ namespace AZ.IO.FileSystem
             }
         }
 
-        private static long GetDirectorySize(string folderPath)
+        private static long GetDirectorySize(string folderPath,long oldsize)
         {
-            DirectoryInfo di = new DirectoryInfo(folderPath);
-            return di.EnumerateFiles("*", SearchOption.AllDirectories).Sum(fi => fi.Length);
+            try
+            {
+                if (Directory.Exists(folderPath))
+                {
+                    DirectoryInfo di = new DirectoryInfo(folderPath);
+                    return di.EnumerateFiles("*", SearchOption.AllDirectories).Sum(fi => fi.Length);
+                }
+                else
+                {
+                    return oldsize;
+                }
+            }
+            catch
+            {
+                // ignored
+            }
+            return oldsize;
         }
 
         public void Start()
         {
-            _timer = new Timer(onInterval, null, 1000, _timerInterval);
+            _timer = new Timer(onInterval, null, _timerInterval, _timerInterval);
         }
 
         protected virtual void OnFolderCompleted(FileCompleteEventArgs e)

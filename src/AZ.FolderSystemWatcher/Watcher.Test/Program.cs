@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
 using AZ.IO.FileSystem;
@@ -26,6 +27,13 @@ namespace Watcher.Test
             Console.ReadLine();
 
             folderWatcher.StopWatch();
+            //var intlist = NetworkInterface.GetAllNetworkInterfaces().ToList();
+            //foreach (var ints in intlist)
+            //{
+            //    Console.WriteLine(ints.Description);
+            //}
+
+            Console.ReadLine();
         }
 
         private static void FolderWatcher_WatchItemCompleted(object sender, FolderFileEventArgs e)
