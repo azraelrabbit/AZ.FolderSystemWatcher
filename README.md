@@ -8,7 +8,7 @@ a filesystemwatcher wrapper only for watching folder or file 's  copy/create/rep
 
 ### 1. FilesystemWatcher working with mono is using inotify mode on linux default.
 but there are some issue to watching mounted path which filesystem is CIFS that mount from an unc/samba path by network,
-unfortunately,there has no way to resolve that issue,may be will fixed in nexe CIFS or not.
+unfortunately,there has no way to resolve that issue,may be will fixed in next version of CIFS or not.
 ### 2. the only way to make the filesystemwatcher working with mono on linux, to enable the mono default impl,not inotify.
 the mono default impl scan the watching target every 750 ms ( found from mono source code.).  
 and the default impl working normally, but there may be caused some performance issue or not.        
