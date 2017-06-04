@@ -2,6 +2,50 @@
 a filesystemwatcher wrapper only for watching folder or file 's  copy/create/replace when it really finished.
 
 ---
+# Usage
+
+is very simple to use:
+
+        var folderWatcher = new FolderFileWatcher("target watching path");
+
+        folderWatcher.WatchItemCompleted += FolderWatcher_WatchItemCompleted;
+
+        folderWatcher.StartWatch();
+
+and the event impl:
+
+        private static void FolderWatcher_WatchItemCompleted(object sender, FolderFileEventArgs e)
+        {
+             // your process logic here
+        }
+
+about the class FolderFileEventArgs :
+
+        public class FolderFileEventArgs:EventArgs
+        {
+            /// <summary>
+            /// this property only effective on renaming
+            /// </summary>
+            public string OldFullPath { get; set; }
+
+            public string FullPath { get; set; }
+
+            public WatcherType WatchType { get; set; }
+        }
+
+about the class  WatcherType :
+
+        public enum WatcherType
+        {
+            FileCreate,
+            FileReplace,
+            FileRename,
+            FolderCreate,
+            FolderRename,
+            FolderReplace,
+            Delete
+        }
+---
 
 # Working With MONO on Linux 
   if you do not watching file/folder on CIFS with unc/samba ignore this  
