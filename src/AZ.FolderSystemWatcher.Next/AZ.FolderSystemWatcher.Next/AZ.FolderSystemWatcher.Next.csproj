@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+	  <VersionPrefix>1.0.1</VersionPrefix>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Description>In linux/osx use custome poll mode to watch some mounted filesystem like cifs.
+that the impl from official .net runtime use inotify to watch ,which could not supoort cifs .
+then this package use interval polling methods to impl the effective watcher.</Description>
+    <Version>$(VersionPrefix).1</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="FileCompleteWatcher.cs" />
+    <Compile Remove="FolderCompleteWatcher.cs" />
+    <Compile Remove="FolderFileEventArgs.cs" />
+    <Compile Remove="FolderFileWatcher.cs" />
+    <Compile Remove="WatcherItem.cs" />
+    <Compile Remove="WatcherType.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
