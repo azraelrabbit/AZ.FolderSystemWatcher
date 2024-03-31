@@ -125,15 +125,29 @@ namespace AZ.FolderSystemWatcher.Next
         public bool IncludeSubdirectories
         {
             get
-            {
-                return (bool) _watcher?.IncludeSubdirectories;
+            { 
+                if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
+                {
+                    return (bool)_watcherPoll?.IncludeSubdirectories;
+                }
+                else{
+                    return (bool) _watcher?.IncludeSubdirectories;
+                }
+                
             }
             set
             {
-                if (_watcher != null)
+                if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
                 {
-                    _watcher.IncludeSubdirectories = value;
+                    _watcherPoll.IncludeSubdirectories=value;
                 }
+                else{
+                     if (_watcher != null)
+                    {
+                        _watcher.IncludeSubdirectories = value;
+                    }
+                }
+               
                
             }
         }
@@ -195,7 +209,7 @@ namespace AZ.FolderSystemWatcher.Next
                 _watcher.Created += _watcher_Created;
                 _watcher.Changed += _watcher_Changed;
                 _watcher.Renamed += _watcher_Renamed;
-                _watcher.Deleted += _watcher_Deleted;
+                _watcher.Deleted += _watcher_Deleted;                
             }
 
         }

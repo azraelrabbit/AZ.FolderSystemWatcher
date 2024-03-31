@@ -42,6 +42,9 @@ namespace AZ.FolderSystemWatcher.Next
 
         private bool _firstInit = true;
 
+
+         public bool IncludeSubdirectories {get;set;}
+
         public AZFileSystemWatcherPoll(string path, int intervalMilseconds = 1000)
         {
             _fileList = new List<FileWatchItem>();
@@ -70,7 +73,13 @@ namespace AZ.FolderSystemWatcher.Next
                     {
                         var d = new DirectoryInfo(_path);
 
-                        var files = d.GetFiles().Where(p => !Utility.IsDir(p)).ToList();
+                        List<FileInfo> files;
+                        if(IncludeSubdirectories){
+                                files = d.GetFiles("*",SearchOption.AllDirectories).Where(p => !Utility.IsDir(p)).ToList();
+                        }else{
+                                files = d.GetFiles().Where(p => !Utility.IsDir(p)).ToList();
+                        }
+                          
                         //var files = d.GetFiles().ToList();
 
                         var hashList = new List<FileWatchItem>();
@@ -188,7 +197,7 @@ namespace AZ.FolderSystemWatcher.Next
                     // Console.WriteLine($"watching:][deleted:{deleted.Count}][created:{created.Count}][exists:{exists.Count}]");
  
                     //Thread.Sleep(_milSeconds);
-                    Task.Delay(_milSeconds).Wait();
+                    Task.Delay(TimeSpan.FromMilliseconds(_milSeconds)).Wait();
 
                     
                 }
@@ -288,6 +297,8 @@ namespace AZ.FolderSystemWatcher.Next
         public string Path { get; set; }
 
         public string StampHash { get; set; }
+
+        //public bool IsDirectory { get; set; }
     }
 
 
