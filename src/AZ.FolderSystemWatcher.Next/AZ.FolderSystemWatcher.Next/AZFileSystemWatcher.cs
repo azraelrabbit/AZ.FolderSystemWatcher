@@ -71,15 +71,30 @@ namespace AZ.FolderSystemWatcher.Next
         {
             get
             {
+                if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
+                {
+                    return _watcherPoll?.Filter;
+                }
+                
                 return _watcher?.Filter;
             }
             set
             {
-                if (_watcher != null)
+                if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
                 {
-                    _watcher.Filter = value;
+                    if (_watcherPoll != null)
+                    {
+                        _watcherPoll.Filter=value;
+                    }
+                     
                 }
-
+                else
+                {
+                    if (_watcher != null)
+                    {
+                        _watcher.Filter = value;
+                    }
+                }
             }
         }
         /// <summary>

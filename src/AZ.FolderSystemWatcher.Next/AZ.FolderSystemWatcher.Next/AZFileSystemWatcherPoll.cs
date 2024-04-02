@@ -4,6 +4,21 @@ namespace AZ.FolderSystemWatcher.Next
 {
     public class AZFileSystemWatcherPoll
     {
+        private string _filter="*.*";
+
+        public string Filter
+        {
+            get
+            {
+                return _filter;
+            }
+            set
+            {
+
+                _filter=value;
+            }
+        }
+
         /// <summary>
         ///   当在指定 <see cref="P:System.IO.FileSystemWatcher.Path" /> 中创建文件和目录时发生。
         /// </summary>
@@ -75,7 +90,7 @@ namespace AZ.FolderSystemWatcher.Next
 
                         List<FileInfo> files;
                         if(IncludeSubdirectories){
-                                files = d.GetFiles("*",SearchOption.AllDirectories).Where(p => !Utility.IsDir(p)).ToList();
+                                files = d.GetFiles(this.Filter, SearchOption.AllDirectories).Where(p => !Utility.IsDir(p)).ToList();
                         }else{
                                 files = d.GetFiles().Where(p => !Utility.IsDir(p)).ToList();
                         }
