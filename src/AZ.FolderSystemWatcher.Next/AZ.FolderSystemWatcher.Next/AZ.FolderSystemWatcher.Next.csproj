@@ -8,7 +8,8 @@
     <Description>In linux/osx use custome poll mode to watch some mounted filesystem like cifs.
 that the impl from official .net runtime use inotify to watch ,which could not supoort cifs .
 then this package use interval polling methods to impl the effective watcher.</Description>
-    <Version>$(VersionPrefix).3</Version>
+    <Version>$(VersionPrefix).7</Version>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

@@ -4,7 +4,7 @@ namespace AZ.FolderSystemWatcher.Next
 {
     public class AZFileSystemWatcherPoll
     {
-        private string _filter="*.*";
+        private string _filter = "*.*";
 
         public string Filter
         {
@@ -15,7 +15,7 @@ namespace AZ.FolderSystemWatcher.Next
             set
             {
 
-                _filter=value;
+                _filter = value;
             }
         }
 
@@ -58,7 +58,7 @@ namespace AZ.FolderSystemWatcher.Next
         private bool _firstInit = true;
 
 
-         public bool IncludeSubdirectories {get;set;}
+        public bool IncludeSubdirectories { get; set; }
 
         public AZFileSystemWatcherPoll(string path, int intervalMilseconds = 1000)
         {
@@ -89,14 +89,16 @@ namespace AZ.FolderSystemWatcher.Next
                         var d = new DirectoryInfo(_path);
 
                         List<FileInfo> files;
-                        if(IncludeSubdirectories){
-                                files = d.GetFiles(this.Filter, SearchOption.AllDirectories).Where(p => !Utility.IsDir(p)).ToList();
-                        }else{
-                                files = d.GetFiles().Where(p => !Utility.IsDir(p)).ToList();
+                        if (IncludeSubdirectories)
+                        {
+                            files = d.GetFiles(this.Filter, SearchOption.AllDirectories).Where(p => !Utility.IsDir(p)).ToList();
                         }
-                          
-                        //var files = d.GetFiles().ToList();
+                        else
+                        {
+                            files = d.GetFiles().Where(p => !Utility.IsDir(p)).ToList();
+                        }
 
+                        //var files = d.GetFiles().ToList();
                         var hashList = new List<FileWatchItem>();
 
                         foreach (var fileInfo in files)
@@ -113,9 +115,7 @@ namespace AZ.FolderSystemWatcher.Next
                             });
                         }
 
-                       
                         //process directory
-
                         //var dirhashList=new List<FileWatchItem>();
                         var dirlist = d.GetDirectories();
 
@@ -133,20 +133,17 @@ namespace AZ.FolderSystemWatcher.Next
                             });
                         }
 
-
                         if (_firstInit)
                         {
                             _fileList.AddRange(hashList);
                             _firstInit = false;
-                          
                         }
                         else
                         {
- 
                             var exists = new List<FileWatchItem>();
                             var created = new List<FileWatchItem>();
                             var deleted = new List<FileWatchItem>();
- 
+
                             //find not exist, created file
 
                             exists = hashList.Where(p => _fileList.Exists(v => v.HashKey == p.HashKey)).ToList();
@@ -171,7 +168,6 @@ namespace AZ.FolderSystemWatcher.Next
                                     _fileList.Add(kp);
 
                                     RenameFileItem(oldName, newName);
-
                                 }
                                 else
                                 {
@@ -183,38 +179,40 @@ namespace AZ.FolderSystemWatcher.Next
                             foreach (var kd in deleted)
                             {
                                 DeleteFileItem(kd);
-
                             }
-
 
                             //changed
                             foreach (var ke in exists)
                             {
-                                var oldItem = _fileList.FirstOrDefault(p => p.HashKey == ke.HashKey);// _fileList[ke.Key];
+                                var oldItem = _fileList.FirstOrDefault(p => p.HashKey == ke.HashKey);
+                                // _fileList[ke.Key];
                                 //Console.WriteLine($"kestamp:{ke.StampHash}\t|\toldStamp:{oldItem.StampHash}\t|\tisEqule:{ke.StampHash==oldItem.StampHash}");
-                                if (ke.StampHash != oldItem.StampHash)
+                                if (oldItem != null)
                                 {
-                                    //changing
-                                    ChangeFileItem(ke.HashKey, ke.Path);
-                                    oldItem.StampHash = ke.StampHash;
+                                    if (ke.StampHash != oldItem.StampHash)
+                                    {
+                                        //changing
+                                        ChangeFileItem(ke.HashKey, ke.Path);
+                                        oldItem.StampHash = ke.StampHash;
+                                    }
                                 }
-                                //}
+                                else
+                                {
+                                    //no old item may be new item
+                                    NewFileItem(ke);
+                                }
                             }
-
                         }
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine(e.Message);
-                   ;
-
+                        Console.WriteLine(e.Message + e.StackTrace + e.InnerException?.StackTrace + e.InnerException?.InnerException.StackTrace);
+        
                     }
                     // Console.WriteLine($"watching:][deleted:{deleted.Count}][created:{created.Count}][exists:{exists.Count}]");
- 
+
                     //Thread.Sleep(_milSeconds);
                     Task.Delay(TimeSpan.FromMilliseconds(_milSeconds)).Wait();
-
-                    
                 }
             });
         }
@@ -229,30 +227,24 @@ namespace AZ.FolderSystemWatcher.Next
 
         private void RenameFileItem(string oldName, string newName)
         {
-
-
             var oldFi = new FileInfo(oldName);
             var newFi = new FileInfo(newName);
             OnRenamed(new RenamedEventArgs(WatcherChangeTypes.Renamed, oldFi.DirectoryName, newFi.Name, oldFi.Name));
-
         }
 
         private void NewFileItem(FileWatchItem fitem)
         {
-
             _fileList.Add(fitem);
             var fi = new FileInfo(fitem.Path);
             OnCreated(new FileSystemEventArgs(WatcherChangeTypes.Created, fi.DirectoryName, fi.Name));
         }
         private void ChangeFileItem(string key, string fullPath)
         {
-
             //_fileList.Add(key, fullPath);
             var fi = new FileInfo(fullPath);
             // OnCreated(new FileSystemEventArgs(WatcherChangeTypes.Created, fi.DirectoryName, fi.Name));
             OnChanged(new FileSystemEventArgs(WatcherChangeTypes.Changed, fi.DirectoryName, fi.Name));
         }
-
 
         protected virtual void OnCreated(FileSystemEventArgs e)
         {
@@ -273,7 +265,6 @@ namespace AZ.FolderSystemWatcher.Next
         protected virtual void OnRenamed(RenamedEventArgs e)
         {
             Renamed?.Invoke(this, e);
-
         }
 
         public string GetFileIdentity(FileInfo fileinfo)
@@ -292,7 +283,7 @@ namespace AZ.FolderSystemWatcher.Next
             //var fileLength = fileinfo.Length.ToString();
             var fileCreateTime = dirinfo.LastAccessTime.Ticks.ToString();
 
-            var key = dirinfo.Name+"[]" + fileCreateTime;
+            var key = dirinfo.Name + "[]" + fileCreateTime;
 
             //  Console.WriteLine(key);
             return key;
@@ -301,10 +292,8 @@ namespace AZ.FolderSystemWatcher.Next
         protected virtual void OnChanged(FileSystemEventArgs e)
         {
             Changed?.Invoke(this, e);
-
         }
     }
-
 
     public class FileWatchItem
     {
