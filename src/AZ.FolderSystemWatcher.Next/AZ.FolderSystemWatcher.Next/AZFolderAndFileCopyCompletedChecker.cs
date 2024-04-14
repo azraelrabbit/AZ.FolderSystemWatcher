@@ -167,20 +167,48 @@
                         var fs = fi.OpenRead();
                         fs.Close();
 
-                        // 如果能够打开 说明文件未被只读占用，说明文件已经拷贝完成
-                        _timer.Dispose();
-                       
-                        if (_eventArgs == null)
+                        //// 如果能够打开 说明文件未被只读占用，说明文件已经拷贝完成
+                        //_timer.Dispose();
+
+                        //if (_eventArgs == null)
+                        //{
+                        //    var di = new FileInfo(_path);
+                        //    if (di.Directory != null)
+                        //    {
+                        //        _eventArgs = new FileSystemEventArgs(WatcherChangeTypes.All, di.Directory.FullName,
+                        //            di.Name);
+                        //    }
+                        //}
+                        //// 触发拷贝完成事件
+                        //OnCopyCompleted(this,_eventArgs);
+
+                        // 获取文件夹大小
+                        var size = fi.Length;
+                        // 如果与上一次计算的文件夹大小相等
+                        if (size == _size)
                         {
-                            var di = new FileInfo(_path);
-                            if (di.Directory != null)
+                            // 释放计时器
+                            _timer.Dispose();
+
+                            if (_eventArgs == null)
                             {
-                                _eventArgs = new FileSystemEventArgs(WatcherChangeTypes.All, di.Directory.FullName,
-                                    di.Name);
+                                var di = new DirectoryInfo(_path);
+                                if (di.Parent != null)
+                                {
+                                    _eventArgs = new FileSystemEventArgs(WatcherChangeTypes.All, di.Parent.FullName,
+                                        di.Name);
+                                }
                             }
+                            // 触发拷贝完成事件
+                            OnCopyCompleted(this, _eventArgs);
                         }
-                        // 触发拷贝完成事件
-                        OnCopyCompleted(this,_eventArgs);
+                        else
+                        {
+                            // 将本次计算的文件夹大小缓存
+                            _size = size;
+                            // 间隔时间后，再次比对
+                            _timer.Change(_interval, Timeout.Infinite);
+                        }
                     }
                     catch (Exception)
                     {

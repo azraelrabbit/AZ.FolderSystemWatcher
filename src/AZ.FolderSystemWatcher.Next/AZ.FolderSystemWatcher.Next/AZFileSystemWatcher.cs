@@ -24,6 +24,7 @@ namespace AZ.FolderSystemWatcher.Next
         /// Checker集合
         /// </summary>
         readonly ConcurrentDictionary<string, AZFolderAndFileCopyCompletedChecker> _dicCopyCompletedCheckers;
+        private int _fileCheckerInterval=2000;
 
         /// <summary>
         /// Created 事件处理程序
@@ -202,8 +203,16 @@ namespace AZ.FolderSystemWatcher.Next
         /// </summary>
         public int Priority { get; set; }
 
+        /// <summary>
+        /// 文件是否写入完成检查器的检查间隔时间(毫秒)
+        /// </summary>
+        public int FileCheckerInterval { get => _fileCheckerInterval; set => _fileCheckerInterval = value; }
+
 
         private bool UsePolling { get; set; }
+
+
+
 
         /// <summary>
         /// AirBox File System 监视器
@@ -332,7 +341,7 @@ namespace AZ.FolderSystemWatcher.Next
                 if (_dicCopyCompletedCheckers.ContainsKey(e.FullPath)) return;
 
                 // 创建Checker对象
-                var checker = new AZFolderAndFileCopyCompletedChecker(e);
+                var checker = new AZFolderAndFileCopyCompletedChecker(e, FileCheckerInterval);
                 checker.Priority = Priority;
                 // 设置Checker对象的完成事件
                 checker.CopyCompleted += Checker_CopyCompleted;
