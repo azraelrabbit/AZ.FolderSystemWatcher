@@ -79,7 +79,7 @@
             }
             _isDirectory = isDir.Value;
             // 比较文件大小的计时器
-            _timer = new Timer(CompareSize, null, 0, Timeout.Infinite);
+            _timer = new Timer(CompareSize, null, _interval, Timeout.Infinite);
         }
         /// <summary>
         /// 文件及文件夹拷贝完成检查器
@@ -98,7 +98,7 @@
                 throw new ArgumentNullException($"{_path} NOT FOUND or CANNOT BE FOUND.");
             }
             _isDirectory = exist.Value;
-            _timer = new Timer(CompareSize, null, 0, Timeout.Infinite);
+            _timer = new Timer(CompareSize, null, _interval, Timeout.Infinite);
         }
 
         /// <summary>

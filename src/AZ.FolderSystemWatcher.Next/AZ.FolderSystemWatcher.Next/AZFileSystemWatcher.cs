@@ -1,5 +1,7 @@
 ﻿using System.Collections.Concurrent;
- 
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.FileProviders.Physical;
+
 namespace AZ.FolderSystemWatcher.Next
 {
     /// <summary>
@@ -71,22 +73,22 @@ namespace AZ.FolderSystemWatcher.Next
         {
             get
             {
-                if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
+                if (this.UsePolling)
                 {
                     return _watcherPoll?.Filter;
                 }
-                
+
                 return _watcher?.Filter;
             }
             set
             {
-                if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
+                if (this.UsePolling)
                 {
                     if (_watcherPoll != null)
                     {
-                        _watcherPoll.Filter=value;
+                        _watcherPoll.Filter = value;
                     }
-                     
+
                 }
                 else
                 {
@@ -104,7 +106,7 @@ namespace AZ.FolderSystemWatcher.Next
         {
             get
             {
-                if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
+                if (this.UsePolling)
                 {
                     return _watcherPoll.Enabled;
                 }
@@ -115,7 +117,7 @@ namespace AZ.FolderSystemWatcher.Next
             }
             set
             {
-                if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
+                if (this.UsePolling)
                 {
                     if (value)
                     {
@@ -140,30 +142,32 @@ namespace AZ.FolderSystemWatcher.Next
         public bool IncludeSubdirectories
         {
             get
-            { 
-                if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                if (this.UsePolling)
                 {
                     return (bool)_watcherPoll?.IncludeSubdirectories;
                 }
-                else{
-                    return (bool) _watcher?.IncludeSubdirectories;
+                else
+                {
+                    return (bool)_watcher?.IncludeSubdirectories;
                 }
-                
+
             }
             set
             {
-                if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
+                if (this.UsePolling)
                 {
-                    _watcherPoll.IncludeSubdirectories=value;
+                    _watcherPoll.IncludeSubdirectories = value;
                 }
-                else{
-                     if (_watcher != null)
+                else
+                {
+                    if (_watcher != null)
                     {
                         _watcher.IncludeSubdirectories = value;
                     }
                 }
-               
-               
+
+
             }
         }
         /// <summary>
@@ -189,7 +193,7 @@ namespace AZ.FolderSystemWatcher.Next
                 {
                     _watcher.NotifyFilter = value;
                 }
-                
+
             }
         }
 
@@ -199,19 +203,24 @@ namespace AZ.FolderSystemWatcher.Next
         public int Priority { get; set; }
 
 
+        private bool UsePolling { get; set; }
+
         /// <summary>
         /// AirBox File System 监视器
         /// </summary>
         /// <param name="path">要监视的路径</param>
         public AZFileSystemWatcher(string path)
         {
-            _dicChangeWatcherTimers = new Dictionary<string, Timer>();
-            _dicCopyCompletedCheckers = new ConcurrentDictionary<string, AZFolderAndFileCopyCompletedChecker>();
+            
+            //new PhysicalFileProvider("").Watch().;
+
             //<string, ZPFolderAndFileCopyCompletedChecker>();
+
+            UsePolling = false;
 
             if (Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix)
             {
-
+                UsePolling = true;
                 _watcherPoll = new AZFileSystemWatcherPoll(path, 2000);
                 _watcherPoll.Created += _watcher_Created;
                 _watcherPoll.Changed += _watcher_Changed;
@@ -220,11 +229,47 @@ namespace AZ.FolderSystemWatcher.Next
             }
             else
             {
+                _dicChangeWatcherTimers = new Dictionary<string, Timer>();
+                _dicCopyCompletedCheckers = new ConcurrentDictionary<string, AZFolderAndFileCopyCompletedChecker>();
+
                 _watcher = new FileSystemWatcher(path);
                 _watcher.Created += _watcher_Created;
                 _watcher.Changed += _watcher_Changed;
                 _watcher.Renamed += _watcher_Renamed;
-                _watcher.Deleted += _watcher_Deleted;                
+                _watcher.Deleted += _watcher_Deleted;
+            }
+
+        }
+
+        /// <summary>
+        /// AirBox File System 监视器,if usePolling==true,then using polling methods , if usePolling==false,use .net core default FileSystemWatcher without polling(the .net core default use inotify to watch file or folder change).
+        /// </summary>
+        /// <param name="path">要监视的路径</param>
+        /// <param name="usePolling"></param>
+        public AZFileSystemWatcher(string path, bool usePolling)
+        {
+           
+            //<string, ZPFolderAndFileCopyCompletedChecker>();
+            UsePolling = false;
+            if (usePolling)
+            {
+                UsePolling = true;
+                _watcherPoll = new AZFileSystemWatcherPoll(path, 2000);
+                _watcherPoll.Created += _watcher_Created;
+                _watcherPoll.Changed += _watcher_Changed;
+                _watcherPoll.Renamed += _watcher_Renamed;
+                _watcherPoll.Deleted += _watcher_Deleted;
+            }
+            else
+            {
+                _dicChangeWatcherTimers = new Dictionary<string, Timer>();
+                _dicCopyCompletedCheckers = new ConcurrentDictionary<string, AZFolderAndFileCopyCompletedChecker>();
+
+                _watcher = new FileSystemWatcher(path);
+                _watcher.Created += _watcher_Created;
+                _watcher.Changed += _watcher_Changed;
+                _watcher.Renamed += _watcher_Renamed;
+                _watcher.Deleted += _watcher_Deleted;
             }
 
         }
@@ -247,17 +292,26 @@ namespace AZ.FolderSystemWatcher.Next
         private void _watcher_Changed(object sender, FileSystemEventArgs e)
         {
             if (Changed == null) return;
-            // 如果没有该路径的计时器
-            if (!_dicChangeWatcherTimers.ContainsKey(e.FullPath))
+
+            if (UsePolling)
             {
-                // 添加新的计时器
-                _dicChangeWatcherTimers.Add(e.FullPath, new Timer(ChangeHandle, e, 1000, Timeout.Infinite));
+                Changed?.Invoke(sender, e);
             }
             else
             {
-                // 改变计时器至1秒后触发
-                _dicChangeWatcherTimers[e.FullPath].Change(1000, Timeout.Infinite);
+                // 如果没有该路径的计时器
+                if (!_dicChangeWatcherTimers.ContainsKey(e.FullPath))
+                {
+                    // 添加新的计时器
+                    _dicChangeWatcherTimers.Add(e.FullPath, new Timer(ChangeHandle, e, 1000, Timeout.Infinite));
+                }
+                else
+                {
+                    // 改变计时器至1秒后触发
+                    _dicChangeWatcherTimers[e.FullPath].Change(1000, Timeout.Infinite);
+                }
             }
+            
         }
 
         /// <summary>
@@ -268,16 +322,25 @@ namespace AZ.FolderSystemWatcher.Next
         private void _watcher_Created(object sender, FileSystemEventArgs e)
         {
             if (Created == null) return;
-            if (_dicCopyCompletedCheckers.ContainsKey(e.FullPath)) return;
 
-            // 创建Checker对象
-            var checker = new AZFolderAndFileCopyCompletedChecker(e);
-            checker.Priority = Priority;
-            // 设置Checker对象的完成事件
-            checker.CopyCompleted += Checker_CopyCompleted;
-            // 设置Checker对象的错误事件
-            checker.CopyError += Checker_CopyError;
-            _dicCopyCompletedCheckers.TryAdd(e.FullPath, checker);
+            if (UsePolling)
+            {
+                Created?.Invoke(this, e);
+            }
+            else
+            {
+                if (_dicCopyCompletedCheckers.ContainsKey(e.FullPath)) return;
+
+                // 创建Checker对象
+                var checker = new AZFolderAndFileCopyCompletedChecker(e);
+                checker.Priority = Priority;
+                // 设置Checker对象的完成事件
+                checker.CopyCompleted += Checker_CopyCompleted;
+                // 设置Checker对象的错误事件
+                checker.CopyError += Checker_CopyError;
+                _dicCopyCompletedCheckers.TryAdd(e.FullPath, checker);
+            }
+           
         }
 
         /// <summary>
@@ -287,8 +350,8 @@ namespace AZ.FolderSystemWatcher.Next
         /// <param name="ex"></param>
         private void Checker_CopyError(FileSystemEventArgs e, Exception ex)
         {
-            _dicCopyCompletedCheckers.TryRemove(e.FullPath,out var removeItem);
-            
+            _dicCopyCompletedCheckers.TryRemove(e.FullPath, out var removeItem);
+
             //LogHelper.Error(e.FullPath,ex);
         }
 
@@ -299,7 +362,7 @@ namespace AZ.FolderSystemWatcher.Next
         /// <param name="e"></param>
         void Checker_CopyCompleted(object sender, FileSystemEventArgs e)
         {
-            _dicCopyCompletedCheckers.TryRemove(e.FullPath,out var removeItem);//.Remove(e.FullPath);
+            _dicCopyCompletedCheckers.TryRemove(e.FullPath, out var removeItem);//.Remove(e.FullPath);
             Created?.Invoke(this, e);
         }
 
